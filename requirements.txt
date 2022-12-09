@@ -1,3 +1,9 @@
 datasets==2.4.0
 seqeval==1.2.2
 transformers==4.21.0
+qwikidata
+requests
+beautifulsoup4
+translate
+spacy
+nlpaug
