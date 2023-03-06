@@ -3,19 +3,21 @@
 
 """# Vector filter"""
 
-!wget https://zenodo.org/record/3234051/files/embeddings-l-model.vec?download=1
+#!wget https://zenodo.org/record/3234051/files/embeddings-l-model.vec?download=1
 
 from gensim.models.keyedvectors import KeyedVectors
-wordvectors = KeyedVectors.load_word2vec_format('embeddings-l-model.vec?download=1', limit=100000)
+import pandas as pd
+from src.widaug.wikidata import produce_nlp_sentences
+from BackTranslation import BackTranslation
+from nltk.tokenize.toktok import ToktokTokenizer
 
-wordvectors.similarity('perro','gato')
 
-scores = ['hola', 'mundo', 'que', 'tal', 'somos']
-filtered = filter(lambda score: len(score) > 4, scores)
+from numpy import dot, float32 as REAL, empty, memmap as np_memmap, \
+    double, array, zeros, vstack, sqrt, newaxis, integer, \
+    ndarray, sum as np_sum, prod, argmax, divide as np_divide
+import numpy as np
+from gensim import utils, matutils
 
-print(list(filtered))
-
-wordvectors.
 
 def substitute_synonyms(list_tokens,list_tags,list_new_toks,max):
   n_t=[]
@@ -49,45 +51,11 @@ def substitute_synonyms(list_tokens,list_tags,list_new_toks,max):
       n_t.append(candidate)
       n_l.append(lab)
 
-
-
-
     else:
       n_t.append(tok)
       n_l.append(lab)
 
   return n_t,n_l
-
-tokens= training_data.iloc[2111]['tokens']
-labels= training_data.iloc[2111]['ner_tags']
-tokens2= dd.iloc[2]['tokens']
-substitute_synonyms(tokens,labels,tokens2,3)
-
-tokens
-
-
-
-clus= ['presidente','ministro','doctor','médico','payaso','malabarista']
-
-lis_cluster= []
-for c in clus:
-  lis_cluster.append(wordvectors.get_vector(c))
-
-from sklearn.cluster import KMeans
-km_2 = KMeans(n_clusters=3)
-labels = km_2.fit(lis_cluster).labels_
-
-labels
-
-"""## Create vectors"""
-
-import numpy as np
-
-from numpy import dot, float32 as REAL, empty, memmap as np_memmap, \
-    double, array, zeros, vstack, sqrt, newaxis, integer, \
-    ndarray, sum as np_sum, prod, argmax, divide as np_divide
-import numpy as np
-from gensim import utils, matutils
 
 def calculate_vector(term):
   words= term.split(' ')
@@ -111,19 +79,6 @@ def calculate_vector(term):
   return matutils.unitvec(array(vectors).mean(axis=0))
 
 
-
-"""# Augmentation Process"""
-
-training_data
-
-wikidata_profesions
-
-lis_total_entities= total_candidates#list(wikidata_profesions)
-pointer_entities=0
-
-#import random
-#random.seed(1)
-#random.shuffle(lis_total_entities)
 
 
 
@@ -215,62 +170,7 @@ def create_new_entity():
 
 
 
-"""# SENTENCE CREATION
 
-"""
-
-res=get_wikipedia_aug_dataset(5,total_candidates)
-
-res
-
-res
-
-augment = get_wikipedia_aug_dataset(2000,total_candidates)
-
-augment_data = augment
-
-len(total_candidates)
-
-len(augment)
-
-
-
-
-'''
-augment_data_cleaned= clean_data(augment_data)
-
-augment_data_cleaned
-
-
-
-
-
-training_data_10 = read_bio_dataset('train_10.txt')
-training_data_30 = read_bio_dataset('train_30.txt')
-training_data_50 = read_bio_dataset('train_50.txt')
-
-training_data = read_bio_dataset('train_clean.txt')
-
-training_data_10_sc = pd.concat( [training_data_10, augment_data_cleaned])
-training_data_30_sc = pd.concat( [training_data_30, augment_data_cleaned])
-training_data_50_sc = pd.concat( [training_data_50, augment_data_cleaned])
-training_data_or_sc = pd.concat( [training_data, augment_data_cleaned])
-
-
-training_data_10_sc.reset_index(inplace=True, drop=True)
-training_data_30_sc.reset_index(inplace=True, drop=True)
-training_data_50_sc.reset_index(inplace=True, drop=True)
-training_data_or_sc.reset_index(inplace=True, drop=True)
-
-training_data_10_sc
-
-write_bio_dataset(training_data_10_sc,'train_10_sc.txt')
-write_bio_dataset(training_data_30_sc,'train_30_sc.txt')
-write_bio_dataset(training_data_50_sc,'train_50_sc.txt')
-write_bio_dataset(training_data_or_sc,'train_or_sc.txt')
-
-
-'''
 
 """## Code For Mention Replacement"""
 def mention_replacement(dataset, length):
@@ -308,6 +208,232 @@ def mention_replacement(dataset, length):
     
   return aug_mr
 
+def create_bio_sentences_of_term(term):
+  var= produce_nlp_sentences(term)
+  res_tok=[]
+  res_lab=[]
+  toktok = ToktokTokenizer()
+  for v in var:
+    tok, lab = annotate_sentence_bio(toktok.tokenize(v),'PROFESION')
+    res_tok.append([tok,lab])
+    #res_lab.append(lab)
+  return res_tok
+
+import time
+def create_wikidata_dataset(total_candidates):
+  res=[]
+  i=0
+  for candidate in total_candidates:
+    time.sleep(2) # Sleep for 3 seconds
+    news= create_bio_sentences_of_term(candidate)
+    res.extend(news)
+    i=i+1
+    if i%20==0:
+      time.sleep(5)
+  return pd.DataFrame(res, columns=['tokens','ner_tags'])
+
+
+
+
+
+def get_entities_of_bio(tokens,labels):
+  lis_entities=[]
+  entity=''
+  found=False
+  for t,l in zip(tokens,labels):
+    if 'B-' in l:
+      if found:
+        lis_entities.append(entity)
+        entity = t
+      else: 
+         found=True
+         #lis_entities.append(entity)
+         entity = t
+    if 'I-' in l:
+      entity= entity +' '+t
+    if 'O' == l and found==True:
+      lis_entities.append(entity)
+      entity = ''
+      found=False
+  return lis_entities
+
+from nltk.tokenize.toktok import ToktokTokenizer
+
+
+def annotate_sentence_bio(sentence,tag):
+  tok=[]
+  lab=[]
+  found=0
+  for a in sentence:
+    if a == '[':
+      found=1
+      continue
+    if a==']':
+      found=0
+      continue
+    if found==0:
+      tok.append(a)
+      lab.append('O')
+      continue
+    if found==1:
+      tok.append(a)
+      lab.append('B-'+tag)
+      found=2
+      continue
+    if found==2:
+      tok.append(a)
+      lab.append('I-'+tag)
+
+  return tok, lab  
+    
+
+def backTranslate_sentence(tokens,labels,trans, toktok):
+  try:
+    sentence= ' '.join(tokens)
+    entities =  get_entities_of_bio(tokens,labels)
+    #print(entities)
+    # validation
+    text= sentence
+    for ent in entities:
+      if not ent in text:
+        print(text)
+        print(ent)
+        print('strange')
+      else: 
+        text= text.replace(ent,'['+ent+']')
+    
+
+    #print(text)
+    result = trans.translate(text, src='es', tmp = 'en').result_text
+    #print(result)
+    res =toktok.tokenize(result)
+
+
+    tok,lab= annotate_sentence_bio(res,'PROFESION')
+    return [tok,lab]
+  except Exception as e:
+    print(e)
+    return None
+
+
+
+def bt_dataset(dataset):
+  total=[]
+
+  trans = BackTranslation(url=[
+      'translate.google.com',
+      'translate.google.co.kr',
+    ], proxies={'http': '127.0.0.1:1234', 'http://host.name': '127.0.0.1:4012'})
+  toktok = ToktokTokenizer()
+  for index, row in dataset.iterrows():
+    toks= row['tokens']
+    tags= row['ner_tags']
+    if not 'B-PROFESION' in tags:
+      continue
+    print(index)
+    res = backTranslate_sentence(toks,tags,trans,toktok)
+    if res == None:
+      print('bad translation')
+      
+      #total.append([[],[]])
+    else:
+      total.append(res)
+
+                                
+  return pd.DataFrame(total, columns=['tokens','ner_tags'])
+
+
+
+
+wordvectors = KeyedVectors.load_word2vec_format('embeddings-l-model.vec?download=1', limit=100000)
+
+
+
+
+
+'''
+
+clus= ['presidente','ministro','doctor','médico','payaso','malabarista']
+
+lis_cluster= []
+for c in clus:
+  lis_cluster.append(wordvectors.get_vector(c))
+
+from sklearn.cluster import KMeans
+km_2 = KMeans(n_clusters=3)
+labels = km_2.fit(lis_cluster).labels_
+
+labels
+
+
+training_data
+
+wikidata_profesions
+
+lis_total_entities= total_candidates#list(wikidata_profesions)
+pointer_entities=0
+
+#import random
+#random.seed(1)
+#random.shuffle(lis_total_entities)
+
+"""# SENTENCE CREATION
+
+"""
+
+res=get_wikipedia_aug_dataset(5,total_candidates)
+
+res
+
+res
+
+augment = get_wikipedia_aug_dataset(2000,total_candidates)
+
+augment_data = augment
+
+len(total_candidates)
+
+len(augment)
+
+
+'''
+
+
+'''
+augment_data_cleaned= clean_data(augment_data)
+
+augment_data_cleaned
+
+
+
+
+
+training_data_10 = read_bio_dataset('train_10.txt')
+training_data_30 = read_bio_dataset('train_30.txt')
+training_data_50 = read_bio_dataset('train_50.txt')
+
+training_data = read_bio_dataset('train_clean.txt')
+
+training_data_10_sc = pd.concat( [training_data_10, augment_data_cleaned])
+training_data_30_sc = pd.concat( [training_data_30, augment_data_cleaned])
+training_data_50_sc = pd.concat( [training_data_50, augment_data_cleaned])
+training_data_or_sc = pd.concat( [training_data, augment_data_cleaned])
+
+
+training_data_10_sc.reset_index(inplace=True, drop=True)
+training_data_30_sc.reset_index(inplace=True, drop=True)
+training_data_50_sc.reset_index(inplace=True, drop=True)
+training_data_or_sc.reset_index(inplace=True, drop=True)
+
+training_data_10_sc
+
+write_bio_dataset(training_data_10_sc,'train_10_sc.txt')
+write_bio_dataset(training_data_30_sc,'train_30_sc.txt')
+write_bio_dataset(training_data_50_sc,'train_50_sc.txt')
+write_bio_dataset(training_data_or_sc,'train_or_sc.txt')
+
+
+'''
 
 '''
 
@@ -466,150 +592,10 @@ lis_total_entities= total_candidates
 '''
 
 
-term= 'director de finanzas'
-from nltk.tokenize.toktok import ToktokTokenizer
-def create_bio_sentences_of_term(term):
-  var= produce_nlp_sentences(term)
-  res_tok=[]
-  res_lab=[]
-  toktok = ToktokTokenizer()
-  for v in var:
-    tok, lab = annotate_sentence_bio(toktok.tokenize(v),'PROFESION')
-    res_tok.append([tok,lab])
-    #res_lab.append(lab)
-  return res_tok
-
-import time
-def create_wikidata_dataset(total_candidates):
-  res=[]
-  i=0
-  for candidate in total_candidates:
-    time.sleep(2) # Sleep for 3 seconds
-    news= create_bio_sentences_of_term(candidate)
-    res.extend(news)
-    i=i+1
-    if i%20==0:
-      time.sleep(5)
-  return pd.DataFrame(res, columns=['tokens','ner_tags'])
 
 
 
-
-from BackTranslation import BackTranslation
-
-def get_entities_of_bio(tokens,labels):
-  lis_entities=[]
-  entity=''
-  found=False
-  for t,l in zip(tokens,labels):
-    if 'B-' in l:
-      if found:
-        lis_entities.append(entity)
-        entity = t
-      else: 
-         found=True
-         #lis_entities.append(entity)
-         entity = t
-    if 'I-' in l:
-      entity= entity +' '+t
-    if 'O' == l and found==True:
-      lis_entities.append(entity)
-      entity = ''
-      found=False
-  return lis_entities
-
-from nltk.tokenize.toktok import ToktokTokenizer
-
-
-def annotate_sentence_bio(sentence,tag):
-  tok=[]
-  lab=[]
-  found=0
-  for a in sentence:
-    if a == '[':
-      found=1
-      continue
-    if a==']':
-      found=0
-      continue
-    if found==0:
-      tok.append(a)
-      lab.append('O')
-      continue
-    if found==1:
-      tok.append(a)
-      lab.append('B-'+tag)
-      found=2
-      continue
-    if found==2:
-      tok.append(a)
-      lab.append('I-'+tag)
-
-  return tok, lab  
-    
-
-def backTranslate_sentence(tokens,labels,trans, toktok):
-  try:
-    sentence= ' '.join(tokens)
-    entities =  get_entities_of_bio(tokens,labels)
-    #print(entities)
-    # validation
-    text= sentence
-    for ent in entities:
-      if not ent in text:
-        print(text)
-        print(ent)
-        print('strange')
-      else: 
-        text= text.replace(ent,'['+ent+']')
-    
-
-    #print(text)
-    result = trans.translate(text, src='es', tmp = 'en').result_text
-    #print(result)
-    res =toktok.tokenize(result)
-
-
-    tok,lab= annotate_sentence_bio(res,'PROFESION')
-    return [tok,lab]
-  except Exception as e:
-    print(e)
-    return None
-
-
-
-def bt_dataset(dataset):
-  total=[]
-
-  trans = BackTranslation(url=[
-      'translate.google.com',
-      'translate.google.co.kr',
-    ], proxies={'http': '127.0.0.1:1234', 'http://host.name': '127.0.0.1:4012'})
-  toktok = ToktokTokenizer()
-  for index, row in dataset.iterrows():
-    toks= row['tokens']
-    tags= row['ner_tags']
-    if not 'B-PROFESION' in tags:
-      continue
-    print(index)
-    res = backTranslate_sentence(toks,tags,trans,toktok)
-    if res == None:
-      print('bad translation')
-      
-      #total.append([[],[]])
-    else:
-      total.append(res)
-
-                                
-  return pd.DataFrame(total, columns=['tokens','ner_tags'])
-
-from BackTranslation import BackTranslation
-trans = BackTranslation(url=[
-      'translate.google.com',
-      'translate.google.co.kr',
-    ], proxies={'http': '127.0.0.1:1234', 'http://host.name': '127.0.0.1:4012'})
-result = trans.translate("están trabajando codo a codo con los [técnicos del departament de salut], completamente fuera del ruido político", src='es', tmp = 'en')
-
+'''
 
 
 augment_wikidata = create_wikidata_dataset(total_candidates)
@@ -639,23 +625,6 @@ write_bio_dataset(training_data_or_sc_t,'drive/MyDrive/CorpusProfner/train_or_sc
 
 
 
-!zip -r sg.zip ./sg
-
-!zip -r mr.zip ./mr
-
-!pip install pyocclient -q
-import owncloud
-oc = owncloud.Client('https://delicias.dia.fi.upm.es/nextcloud/')
-
-oc.login('pcalleja', '')
-
-oc.put_file('sg.zip', 'sg.zip')
-
-oc.put_file('t.zip', 't.zip')
-
-aug_sr = pd.DataFrame(columns = ['tokens', 'ner_tags'])
-
-aug_sr
 
 val= 0
 
@@ -669,16 +638,8 @@ for index, row in augment1.iterrows():
 
 """# Back Translation"""
 
-!pip install BackTranslation -q
 
-from BackTranslation import BackTranslation
-trans = BackTranslation(url=[
-      'translate.google.com',
-      'translate.google.co.kr',
-    ], proxies={'http': '127.0.0.1:1234', 'http://host.name': '127.0.0.1:4012'})
-result = trans.translate('hola mundo que tal', src='es', tmp = 'en')
-print(result.result_text)
-
+'''
 
 
 '''
