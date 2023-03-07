@@ -19,6 +19,9 @@ import numpy as np
 from gensim import utils, matutils
 
 
+wordvectors = None
+
+
 def substitute_synonyms(list_tokens,list_tags,list_new_toks,max):
   n_t=[]
   n_l=[]
@@ -62,6 +65,8 @@ def calculate_vector(term):
   filter_words = [item for item in words if len(item)>3]
   val=np.zeros(300)
   vectors=[]
+  global wordvectors
+
 
   for word in filter_words:
     if word in  wordvectors.vocab:
@@ -71,7 +76,7 @@ def calculate_vector(term):
 
 
   if len(vectors)==0:
-    return np.zeros(300) 
+    return np.zeros(300)
 
   #if len(vectors)==1:
   #  return matutils.unitvec(array(vectors).mean(axis=0))
@@ -154,8 +159,8 @@ def replace_mention(tokens,labels,typ):
 
 
 def create_new_entity():
-  
-  typ= 'PROFESION' 
+
+  typ= 'PROFESION'
   entity = get_random_profesion()
   tokens= entity.split(' ')
   labels= ['B-'+typ]
@@ -199,8 +204,8 @@ def mention_replacement(dataset, length):
     
     
     
-    n_t,n_l= replace_mention(t,l,'PROFESION') 
-    
+    n_t,n_l= replace_mention(t,l,'PROFESION')
+
     new_df = pd.DataFrame([{'tokens' : n_t, 'ner_tags' : n_l}])
     aug_mr = pd.concat([aug_mr, new_df], ignore_index=True)
     counter+=1
@@ -245,7 +250,7 @@ def get_entities_of_bio(tokens,labels):
       if found:
         lis_entities.append(entity)
         entity = t
-      else: 
+      else:
          found=True
          #lis_entities.append(entity)
          entity = t
@@ -284,7 +289,7 @@ def annotate_sentence_bio(sentence,tag):
       tok.append(a)
       lab.append('I-'+tag)
 
-  return tok, lab  
+  return tok, lab
     
 
 def backTranslate_sentence(tokens,labels,trans, toktok):
@@ -301,7 +306,7 @@ def backTranslate_sentence(tokens,labels,trans, toktok):
         print('strange')
       else: 
         text= text.replace(ent,'['+ent+']')
-    
+
 
     #print(text)
     result = trans.translate(text, src='es', tmp = 'en').result_text
@@ -334,7 +339,7 @@ def bt_dataset(dataset):
     res = backTranslate_sentence(toks,tags,trans,toktok)
     if res == None:
       print('bad translation')
-      
+
       #total.append([[],[]])
     else:
       total.append(res)
@@ -343,9 +348,25 @@ def bt_dataset(dataset):
   return pd.DataFrame(total, columns=['tokens','ner_tags'])
 
 
+def clean_empty(dataset):
+  rows_delete = []
+  for index, row in dataset.iterrows():
+    toks = row['tokens']
+    tags = row['ner_tags']
+    if len(toks) == 0:
+      print('s')
+      rows_delete.append(index)
+
+  dataset.drop(rows_delete, axis=0, inplace=True)
+  dataset.reset_index(inplace=True, drop=True)
+
+  return dataset
 
 
-wordvectors = KeyedVectors.load_word2vec_format('embeddings-l-model.vec?download=1', limit=100000)
+
+def init_wordvectors():
+  global wordvectors
+  wordvectors = KeyedVectors.load_word2vec_format('embeddings-l-model.vec?download=1', limit=100000)
 
 
 
@@ -401,12 +422,6 @@ len(augment)
 
 '''
 augment_data_cleaned= clean_data(augment_data)
-
-augment_data_cleaned
-
-
-
-
 
 training_data_10 = read_bio_dataset('train_10.txt')
 training_data_30 = read_bio_dataset('train_30.txt')
@@ -591,10 +606,6 @@ lis_total_entities= total_candidates
 
 '''
 
-
-
-
-
 '''
 
 
@@ -698,20 +709,7 @@ write_bio_dataset(training_data_50_bt,'drive/MyDrive/CorpusProfner/train_50_bt.t
 
 training_data_TOTAL_bt = training_data_or_bt
 
-def clean_empty(dataset):
-  rows_delete=[]
-  for index, row in dataset.iterrows():
-    toks= row['tokens']
-    tags= row['ner_tags']
-    if len(toks) ==0:
-      print('s')
-      rows_delete.append(index)
 
-  dataset.drop(rows_delete, axis=0, inplace=True)
-  dataset.reset_index(inplace=True, drop=True)
-
-  
-  return dataset
 
 training_data_10_bt_c= clean_empty(training_data_10_bt)
 training_data_30_bt_c= clean_empty(training_data_30_bt)

@@ -385,19 +385,21 @@ print(produce_nlp_sentences('cocinero'))
 
 print(produce_nlp_sentences('actor'))
 '''
-
+'''
 toktok = ToktokTokenizer()
 res = toktok.tokenize('[banquero de finanzas] es aquel sujeto al banco que trabaja con [banqueros]')
 res
-
+'''
 '''
 annotate_sentence_bio(res,'PROFESION')
 
 produce_nlp_sentences('enfermero especialista gerontológico')
-'''
+
 term = 'director de finanzas'
 var = produce_nlp_sentences(term)
 generate_bio_sentences(var, term)
+'''
+
 
 
 

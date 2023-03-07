@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-datapath = 'drive/MyDrive/CorpusProfner/'
-valid_file = datapath + 'valid_clean.txt'
-
-training_file = datapath + 'train_50_mr.txt'
-folder_name = "test6"
-
-"""#Dataset"""
-
 import pandas as pd
 import os
 import itertools
@@ -19,7 +11,6 @@ from transformers import AutoModelForTokenClassification, TrainingArguments, Tra
 from transformers import DataCollatorForTokenClassification
 import torch
 from transformers import RobertaForTokenClassification, AutoModelForTokenClassification
-
 import emoji
 
 
@@ -108,74 +99,84 @@ def compute_metrics(p):
             "accuracy": results["overall_accuracy"]}
 
 
-valid_data = read_bio_dataset(valid_file)
 
-training_data = read_bio_dataset(training_file)
 
-train_dataset = Dataset.from_pandas(training_data)
-test_dataset = Dataset.from_pandas(valid_data)
+datapath = 'drive/MyDrive/CorpusProfner/'
+valid_file = datapath + 'valid_clean.txt'
 
-labels_list = ['O', 'B-PROFESION', 'I-PROFESION']
-label_num_list = list(range(0, len(labels_list)))
+training_file = datapath + 'train_50_mr.txt'
+folder_name = "test6"
 
-label2id = {}
-id2label = {}
-for label, num in zip(labels_list, label_num_list):
-    label2id[label] = num
-    id2label[num] = label
+def train_model(model_name,training_file, valid_file ):
 
-task = "ner"
+    valid_data = read_bio_dataset(valid_file)
 
-model_checkpoint = "PlanTL-GOB-ES/roberta-base-bne"
+    training_data = read_bio_dataset(training_file)
 
-tokenizer = AutoTokenizer.from_pretrained(model_checkpoint, add_prefix_space=True, truncation=True, max_length=512)
+    train_dataset = Dataset.from_pandas(training_data)
+    test_dataset = Dataset.from_pandas(valid_data)
 
-train_tokenized_datasets = train_dataset.map(tokenize_and_align_labels, batched=True)
-# valid_tokenized_datasets = valid_dataset.map(tokenize_and_align_labels, batched=True)
-test_tokenized_datasets = test_dataset.map(tokenize_and_align_labels, batched=True)
+    labels_list = ['O', 'B-PROFESION', 'I-PROFESION']
+    label_num_list = list(range(0, len(labels_list)))
 
-model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(labels_list),
-                                                        id2label=id2label, label2id=label2id)
+    label2id = {}
+    id2label = {}
+    for label, num in zip(labels_list, label_num_list):
+        label2id[label] = num
+        id2label[num] = label
 
-batch_size = 16
-epochs = 6
-args = TrainingArguments(
-    folder_name,
-    evaluation_strategy="epoch",
-    save_strategy="no",
+    task = "ner"
 
-    per_device_train_batch_size=batch_size,
-    per_device_eval_batch_size=batch_size,
-    num_train_epochs=epochs,
+    model_checkpoint = "PlanTL-GOB-ES/roberta-base-bne"
 
-    warmup_steps=500,
-    weight_decay=0.01,
-    logging_dir="./logs",
-    learning_rate=1e-4,
-    # fp16=True,
-    # "weight_decay": (0, 0.3),
-    # "learning_rate": (1e-5, 5e-5),
+    tokenizer = AutoTokenizer.from_pretrained(model_checkpoint, add_prefix_space=True, truncation=True, max_length=512)
 
-    optim="adamw_torch"
+    train_tokenized_datasets = train_dataset.map(tokenize_and_align_labels, batched=True)
+    # valid_tokenized_datasets = valid_dataset.map(tokenize_and_align_labels, batched=True)
+    test_tokenized_datasets = test_dataset.map(tokenize_and_align_labels, batched=True)
 
-    # report_to="wandb" ## WANDB
+    model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(labels_list),
+                                                            id2label=id2label, label2id=label2id)
 
-)
+    batch_size = 16
+    epochs = 6
+    args = TrainingArguments(
+        folder_name,
+        evaluation_strategy="epoch",
+        save_strategy="no",
 
-data_collator = DataCollatorForTokenClassification(tokenizer)
-metric = load_metric("seqeval")
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=epochs,
 
-trainer = Trainer(
-    model,
-    args,
-    train_dataset=train_tokenized_datasets,
-    eval_dataset=test_tokenized_datasets,
-    data_collator=data_collator,
-    tokenizer=tokenizer,
-    compute_metrics=compute_metrics
-)
+        warmup_steps=500,
+        weight_decay=0.01,
+        logging_dir="./logs",
+        learning_rate=1e-4,
+        # fp16=True,
+        # "weight_decay": (0, 0.3),
+        # "learning_rate": (1e-5, 5e-5),
 
-trainer.train()
+        optim="adamw_torch"
 
-trainer.evaluate()
-trainer.save_model('profner1')
+        # report_to="wandb" ## WANDB
+
+    )
+
+    data_collator = DataCollatorForTokenClassification(tokenizer)
+    metric = load_metric("seqeval")
+
+    trainer = Trainer(
+        model,
+        args,
+        train_dataset=train_tokenized_datasets,
+        eval_dataset=test_tokenized_datasets,
+        data_collator=data_collator,
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
+    )
+
+    trainer.train()
+
+    trainer.evaluate()
+    trainer.save_model(model_name)
