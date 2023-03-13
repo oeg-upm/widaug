@@ -9,37 +9,9 @@ Original file is located at
 # Install
 """
 
-!pip install datasets -q
-!pip install transformers -q
-!pip install seqeval -q
-#!pip install wandb -q
-!pip install emoji -q
-
-!python
-
-!ls drive/MyDrive/CorpusProfNer/
 
 
 
-
-
-
-
-
-
-datapath='drive/MyDrive/CorpusProfner/'
-valid_file= datapath+'valid_clean.txt'
-
-training_file = datapath+'train_50_mr.txt'
-folder_name= "test6"
-
-!nvidia-smi
-
-"""#Dataset"""
-
-import pandas as pd
-import os
-import itertools
 import pandas as pd
 import numpy as np
 from datasets import Dataset
@@ -47,7 +19,22 @@ from datasets import load_metric
 from transformers import AutoTokenizer
 from transformers import AutoModelForTokenClassification, TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
-import torch
+from transformers import RobertaForTokenClassification, AutoModelForTokenClassification
+
+
+
+
+## Executed in Google Colab
+
+datapath='drive/MyDrive/CorpusProfner/'
+
+valid_file= datapath+'valid_clean.txt'
+training_file = datapath+'train_50_mr.txt'
+folder_name= "train-50-mr"
+
+
+
+"""#Dataset"""
 
 
 
@@ -75,7 +62,6 @@ def read_bio_dataset(dir):
   #Returning df_list to a dataframe
   return pd.DataFrame(df_list, columns=['tokens','ner_tags'])
   
-import emoji
 
 
 
@@ -88,52 +74,13 @@ def read_tsv_dataset(name):
 
 
 
-
-
-'''
-write_bio_dataset(valid_data,'valid_formated.txt')
-write_bio_dataset(training_data,'train_formated.txt')
-
-
-valid_data = read_bio_dataset('valid_spacy.txt')
-valid_data = clean_data(valid_data)
-valid_data.head(26)
-
-training_data = read_bio_dataset('train_spacy.txt') 
-training_data = clean_data(training_data)
-training_data.head(26)
-
-
-valid_data = read_bio_dataset('valid_formated.txt')
-training_data = read_bio_dataset('train_formated.txt') 
-
-valid_data = clean_data(valid_data)
-training_data = clean_data(training_data)
-
-'''
-
-
 valid_data = read_bio_dataset(valid_file)
-
 training_data= read_bio_dataset(training_file)
 
 
 
 
 
-'''
-
-
-training_data= pd.read_csv('training_or.tsv', sep="\t", encoding='utf8')
-training_data['tokens'] = training_data['tokens'].apply(eval)
-training_data['ner_tags'] = training_data['ner_tags'].apply(eval)
-
-training_data = clean_data(training_data)
-training_data
-
-
-
-'''
 train_dataset = Dataset.from_pandas(training_data)
 test_dataset = Dataset.from_pandas(valid_data)
 
@@ -204,7 +151,6 @@ test_tokenized_datasets = test_dataset.map(tokenize_and_align_labels, batched=Tr
 
 
 
-from transformers import  RobertaForTokenClassification, AutoModelForTokenClassification
 
 model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(labels_list), id2label = id2label, label2id = label2id)
 
@@ -265,33 +211,9 @@ trainer = Trainer(
 
 trainer.train()
 
-import transformers
-transformers.__version__
 
-import datasets
-datasets.__version__
 
-!pip freeze
 
-def get_data_val()
-
-train_tokenized_datasets
-
-train_tokenized_datasets[0]
-
-write_tokenizeddataset(train_tokenized_datasets,'train_full.txt')
-
-def write_tokenizeddataset(dataset,outputfile):
-  with open(outputfile, 'w') as f:
-    
-    for index in range(0,len(dataset)):
-      toks= dataset[index]['input_ids']
-      tags= dataset[index]['labels']
-      f.write(str(toks)+'\n')
-      f.write(str(tags)+'\n')
-      f.write('\n')
-
-"""#Saving"""
 
 
 
@@ -309,49 +231,6 @@ trainer = Trainer(
 
 trainer.train()
 
-!rm -r profner_model
-
 trainer.evaluate()
-trainer.save_model('profner1')
+trainer.save_model('profner')
 
-!pip install numba
-
-from numba import cuda 
-device = cuda.get_current_device()
-device.reset()
-
-"""#Excuting"""
-
-!pip install pyocclient -q
-
-import owncloud
-oc = owncloud.Client('https://delicias.dia.fi.upm.es/nextcloud/')
-#oc.login('asanchez', 'AS.sczz.448')
-oc.login('pcalleja', '')
-
-!zip -r ./base.model-5.zip ./base.model
-
-oc.put_file('base-model-5.zip', 'base.model-5.zip')
-
-oc.get_file('ProfNer/training_or.tsv', 'training_or.tsv')
-
-oc.get_file('ProfNer/training_50.tsv', 'training_50.tsv')
-oc.get_file('ProfNer/training_30.tsv', 'training_30.tsv')
-oc.get_file('ProfNer/training_10.tsv', 'training_10.tsv')
-oc.get_file('ProfNer/train_spacy.txt', 'train_spacy.txt')
-oc.get_file('ProfNer/valid_spacy.txt', 'valid_spacy.txt')
-
-from transformers import AutoTokenizer, AutoModelForTokenClassification
-from transformers import pipeline
-
-tokenizer = AutoTokenizer.from_pretrained("profner1")
-model = AutoModelForTokenClassification.from_pretrained("profner1")
-
-nlp = pipeline("ner", model=model, tokenizer=tokenizer)
-
-example = "hola conductores de ambulancia y viva la guardia civil"
-
-ner_results = nlp(example)
-print(ner_results)
-
-nlp('Regarding Mossack Fonseca S.A.')

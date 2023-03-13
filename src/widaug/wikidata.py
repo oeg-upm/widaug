@@ -1,4 +1,3 @@
-
 import pandas as pd
 from qwikidata.sparql import return_sparql_query_results
 from nltk.tokenize.toktok import ToktokTokenizer
@@ -9,6 +8,7 @@ import re
 from nltk.stem import PorterStemmer
 from nltk.tokenize.toktok import ToktokTokenizer
 from qwikidata.sparql import return_sparql_query_results
+
 
 def search_child(entity, relation, lang, limit):
     res = []
@@ -23,8 +23,8 @@ def search_child(entity, relation, lang, limit):
         order by ?random
         limit #LIMIT
         '''
-        query = query.replace('#ENTITY' ,entity).replace('#LIMIT' ,str(limit)).replace('#RELATION' ,relation).replace \
-            ('#LANG' ,lang)
+        query = query.replace('#ENTITY', entity).replace('#LIMIT', str(limit)).replace('#RELATION', relation).replace \
+            ('#LANG', lang)
 
         query_res = return_sparql_query_results(query)
 
@@ -34,13 +34,12 @@ def search_child(entity, relation, lang, limit):
         return res
 
     except Exception as e:
-        print("Exception:" ,e)
+        print("Exception:", e)
         return None
 
 
-
 def get_concept_code(Term):
-  try: 
+    try:
         query = '''
         select ?item 
         where{ ?item rdfs:label '#TERM'@es
@@ -50,16 +49,17 @@ def get_concept_code(Term):
 
         query_res = return_sparql_query_results(query)
         val = query_res['results']['bindings'][0]['item']['value']
-        
-        return val.split('/')[-1]  
-        
 
-  except Exception as e:
-        print("Exception:" ,e)
+        return val.split('/')[-1]
+
+
+    except Exception as e:
+        print("Exception:", e)
         return None
 
-def get_description(code ,lang):
-  try: 
+
+def get_description(code, lang):
+    try:
         query = '''
         select ?label
         where{
@@ -69,16 +69,16 @@ def get_description(code ,lang):
         }
         
         '''
-        query = query.replace('#ENTITY' ,code).replace('#LANG' ,lang)
+        query = query.replace('#ENTITY', code).replace('#LANG', lang)
 
         query_res = return_sparql_query_results(query)
         val = query_res['results']['bindings'][0]['label']['value']
-        
-        return val  
-        
 
-  except Exception as e:
-        print("Exception:" ,e)
+        return val
+
+
+    except Exception as e:
+        print("Exception:", e)
         return None
 
 
@@ -94,7 +94,7 @@ def get_related_properties(code, rel, lang):
         }
 
         '''
-        query = query.replace('#ENTITY' ,code).replace('#LANG' ,lang).replace('#REL' ,rel)
+        query = query.replace('#ENTITY', code).replace('#LANG', lang).replace('#REL', rel)
 
         query_res = return_sparql_query_results(query)
 
@@ -104,7 +104,7 @@ def get_related_properties(code, rel, lang):
         return res
 
     except Exception as e:
-        print("Exception:" ,e)
+        print("Exception:", e)
         return []
 
 
@@ -121,19 +121,20 @@ def search_child(entity, relation, lang, limit):
         
         limit #LIMIT
         '''
-        query = query.replace('#ENTITY' ,entity).replace('#LIMIT' ,str(limit)).replace('#RELATION' ,relation).replace \
-            ('#LANG' ,lang)
+        query = query.replace('#ENTITY', entity).replace('#LIMIT', str(limit)).replace('#RELATION', relation).replace \
+            ('#LANG', lang)
 
         query_res = return_sparql_query_results(query)
         print(query_res)
         for i in query_res['results']['bindings']:
             res.append(i['rel']['value'])
 
-        return res 
+        return res
 
     except Exception as e:
-        print("Exception:" ,e)
+        print("Exception:", e)
         return None
+
 
 '''
 #search_child('Q28640','P31','es',20)
@@ -144,15 +145,16 @@ print(get_related_properties('Q160131','P1056','es'))
 print(get_related_properties('Q160131','P2283','es'))
 '''
 
+
 def produce_nlp_sentences(term):
-    res =[]
+    res = []
     code = get_concept_code(term)
     if code == None:
         return []
-    val= get_description(code ,'es')
-    tagged_term= '[ ' +term +']'
+    val = get_description(code, 'es')
+    tagged_term = '[ ' + term + ']'
     if val != None:
-        res.append(tagged_term +' es ' + val)
+        res.append(tagged_term + ' es ' + val)
     # sub
     val = get_related_properties(code, 'P279', 'es')
     if len(val) > 0:
@@ -198,9 +200,6 @@ def produce_nlp_sentences(term):
     return res
 
 
-
-
-
 def annotate_sentence_bio(sentence, tag):
     tok = []
     lab = []
@@ -228,8 +227,6 @@ def annotate_sentence_bio(sentence, tag):
     return tok, lab
 
 
-
-
 def generate_bio_sentences(sentences, term):
     toktok = ToktokTokenizer()
     res = []
@@ -246,9 +243,6 @@ def generate_bio_sentences(sentences, term):
             for i, j in zip(tok_temp_res, bio_temp_res):
                 res.append([i, j])
     return res
-
-
-
 
 
 def search_child(entity, relation, lang, limit):
@@ -369,10 +363,6 @@ def get_wikipedia_aug_dataset(n, list_entities=[]):
     return pd.DataFrame(find_prof_sentences(n, list_entities), columns=['tokens', 'ner_tags'])
 
 
-
-
-
-
 '''
 print(produce_nlp_sentences('científico'))
 
@@ -399,10 +389,6 @@ term = 'director de finanzas'
 var = produce_nlp_sentences(term)
 generate_bio_sentences(var, term)
 '''
-
-
-
-
 
 '''
 

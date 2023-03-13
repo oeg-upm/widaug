@@ -7,12 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1zuy4sLiqmAb4m335AOWEvDwiKPkyke4x
 """
 
-!pip install qwikidata -q
-!pip install datasets -q
-!pip install transformers -q
-!pip install seqeval -q
-!pip install emoji -q
-
 
 
 import re
@@ -252,9 +246,7 @@ write_bio_dataset(training_data_pruned_10,'train_10.txt')
 write_bio_dataset(training_data_pruned_30,'train_30.txt')
 write_bio_dataset(training_data_pruned_50,'train_50.txt')
 
-!rm -r pruned
 
-training_data_pruned_10
 
 training_data_pruned_10.to_csv('pruned/training_10.tsv', sep="\t",index=False,encoding='utf8')
 training_data_pruned_30.to_csv('pruned/training_30.tsv', sep="\t",index=False,encoding='utf8')
@@ -271,8 +263,6 @@ training_data = read_bio_dataset('train_clean.txt')
 total_entities =get_dataset_entities(training_data,'PROFESION')
 
 """# WIKIDATA FUNCTIONS"""
-
-!pip install qwikidata -q
 
 from qwikidata.sparql import return_sparql_query_results
 
@@ -433,8 +423,6 @@ def produce_nlp_sentences(term):
 
 print(produce_nlp_sentences('científico'))
 
-P2521 #femenina
-P425 #ámbito de la ocupación
 
 print(produce_nlp_sentences('panadero'))
 
@@ -631,11 +619,7 @@ def find_prof_sentences(num,list_entities):
 def get_wikipedia_aug_dataset(n,list_entities=[]):
   return pd.DataFrame(find_prof_sentences(n,list_entities), columns=['tokens','ner_tags'])
 
-print(total_candidates)
 
-res=get_wikipedia_aug_dataset(10,total_candidates)
-
-res
 
 ### Busco profesiones
 wikidata_profesions = search_child('Q28640','P31','es',5000)
@@ -716,7 +700,7 @@ wordvectors.most_similar('jugador_futbol')
 
 """# Vector filter"""
 
-!wget https://zenodo.org/record/3234051/files/embeddings-l-model.vec?download=1
+#!wget https://zenodo.org/record/3234051/files/embeddings-l-model.vec?download=1
 
 from gensim.models.keyedvectors import KeyedVectors
 wordvectors = KeyedVectors.load_word2vec_format('embeddings-l-model.vec?download=1', limit=100000)
@@ -728,7 +712,6 @@ filtered = filter(lambda score: len(score) > 4, scores)
 
 print(list(filtered))
 
-wordvectors.
 
 def substitute_synonyms(list_tokens,list_tags,list_new_toks,max):
   n_t=[]
@@ -773,10 +756,6 @@ def substitute_synonyms(list_tokens,list_tags,list_new_toks,max):
 
 tokens= training_data.iloc[2111]['tokens']
 labels= training_data.iloc[2111]['ner_tags']
-tokens2= dd.iloc[2]['tokens']
-substitute_synonyms(tokens,labels,tokens2,3)
-
-tokens
 
 
 
@@ -1040,22 +1019,20 @@ augment10 = mention_replacement(training_data_pruned_10, len(training_data)-len(
 
 total_candidates
 
-augmentDouble.iloc[1]['tokens']
 
 augment10.iloc[0]
 
 augment30 = mention_replacement(training_data_pruned_30, len(training_data)-len(training_data_pruned_30))
 augment50 = mention_replacement(training_data_pruned_50, len(training_data)-len(training_data_pruned_50))
 augmentDouble = mention_replacement(training_data, len(training_data))
-
+'''
 augmentor = mention_replacement(training_data_or, len(training_data_or)/2)
-
 training_data_or_mr = pd.concat( [training_data_or, augmentor])
 training_data_or_mr.reset_index(inplace=True, drop=True)
-
 write_bio_dataset(training_data_or_mr,'drive/MyDrive/CorpusProfner/train_or_mr.txt')
 
 len(augmentor)
+'''
 
 len(augment50)+len(training_data_pruned_50)
 
@@ -1227,37 +1204,7 @@ write_bio_dataset(training_data_or_sc_t,'drive/MyDrive/CorpusProfner/train_or_sc
 
 
 
-!zip -r sg.zip ./sg
-
-!zip -r mr.zip ./mr
-
-!pip install pyocclient -q
-import owncloud
-oc = owncloud.Client('https://delicias.dia.fi.upm.es/nextcloud/')
-
-oc.login('pcalleja', '')
-
-oc.put_file('sg.zip', 'sg.zip')
-
-oc.put_file('t.zip', 't.zip')
-
-aug_sr = pd.DataFrame(columns = ['tokens', 'ner_tags'])
-
-aug_sr
-
-val= 0
-
-for index, row in augment1.iterrows():
-    if index <val:
-      continue
-    print(index)
-    n_t,n_l= lm_sentence_augmentation(row['tokens'],row['ner_tags'])
-    aug_sr = aug_sr.append({'tokens' : n_t, 'ner_tags' : n_l},
-        ignore_index = True)
-
 """# Back Translation"""
-
-!pip install BackTranslation -q
 
 from BackTranslation import BackTranslation
 trans = BackTranslation(url=[
@@ -1406,8 +1353,6 @@ training_data_or_bt_only = bt_dataset(training_data_or)
 write_bio_dataset(training_data_or_bt_only,'drive/MyDrive/CorpusProfner/train_or_bt_only.txt')
 
 
-
-write_bio_dataset(training_data_or_bt,'drive/MyDrive/CorpusProfner/train_or_bt.txt')
 
 training_data_10_bt = bt_dataset(training_data_10)
 

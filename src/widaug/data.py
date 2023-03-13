@@ -13,6 +13,20 @@ def process_hashtag(input_text: str) -> str:
     )
 
 
+def clean_empty(dataset):
+    rows_delete = []
+    for index, row in dataset.iterrows():
+        toks = row['tokens']
+        tags = row['ner_tags']
+        if len(toks) == 0:
+            print('s')
+            rows_delete.append(index)
+
+    dataset.drop(rows_delete, axis=0, inplace=True)
+    dataset.reset_index(inplace=True, drop=True)
+
+    return dataset
+
 def clean_entity(entity):
     entity = entity.replace('# ', '#')
     entity = process_hashtag(entity)

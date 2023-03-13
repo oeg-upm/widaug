@@ -84,7 +84,7 @@ def calculate_vector(term):
   return matutils.unitvec(array(vectors).mean(axis=0))
 
 
-
+pointer_entities = 0
 
 
 def get_random_profesion():
@@ -190,27 +190,27 @@ def mention_replacement(dataset, length):
   counter=0
   pos=0
   while counter < length:
-    
+
     t=dataset.loc[pos, "tokens"]
     l=dataset.loc[pos, "ner_tags"]
     pos+=1
-    
+
 
     if pos == dataset_size:
       pos=0
 
     if all(element == 'O' for element in l):
       continue
-    
-    
-    
+
+
+
     n_t,n_l= replace_mention(t,l,'PROFESION')
 
     new_df = pd.DataFrame([{'tokens' : n_t, 'ner_tags' : n_l}])
     aug_mr = pd.concat([aug_mr, new_df], ignore_index=True)
     counter+=1
-  
-    
+
+
   return aug_mr
 
 def create_bio_sentences_of_term(term):
@@ -290,7 +290,7 @@ def annotate_sentence_bio(sentence,tag):
       lab.append('I-'+tag)
 
   return tok, lab
-    
+
 
 def backTranslate_sentence(tokens,labels,trans, toktok):
   try:
@@ -304,7 +304,7 @@ def backTranslate_sentence(tokens,labels,trans, toktok):
         print(text)
         print(ent)
         print('strange')
-      else: 
+      else:
         text= text.replace(ent,'['+ent+']')
 
 
@@ -344,7 +344,7 @@ def bt_dataset(dataset):
     else:
       total.append(res)
 
-                                
+
   return pd.DataFrame(total, columns=['tokens','ner_tags'])
 
 
