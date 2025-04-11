@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "Si utilizas este trabajo, por favor cita el siguiente artículo:"
+title: "Widaug. Data augmentation for named entity recognition using Wikidata"
+authors:
+  - family-names: Calleja
+    given-names: P.
+  - family-names: Sánchez
+    given-names: A.
+  - family-names: Corcho
+    given-names: O.
+date-released: 2023-09-01
+version: "1.0.0"
+doi: 10.26342/2023-70-12
+url: https://journal.sepln.org/sepln/ojs/ojs/index.php/pln/article/view/6489
+type: article
+journal: Procesamiento del Lenguaje Natural
+volume: 70
+startpage: 145
+endpage: 155
